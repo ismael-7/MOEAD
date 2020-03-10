@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 5.0.0?>
+
+<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage2">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476">
+			<storageModule externalCElementFile="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476_org.eclipse.cdt.core.settings" id="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476" name="Debug"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476_cdtBuildSystem" version="4.0.0"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476_scannerConfiguration"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476_org.eclipse.cdt.core.externalSettings"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476_org.eclipse.cdt.core.language.mapping"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.gnu.macosx.exe.debug.1259550476_org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+		</cconfiguration>
+		<cconfiguration id="cdt.managedbuild.config.macosx.exe.release.609139754">
+			<storageModule externalCElementFile="cdt.managedbuild.config.macosx.exe.release.609139754_org.eclipse.cdt.core.settings" id="cdt.managedbuild.config.macosx.exe.release.609139754" name="Release"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.macosx.exe.release.609139754_cdtBuildSystem" version="4.0.0"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.macosx.exe.release.609139754_scannerConfiguration"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.macosx.exe.release.609139754_org.eclipse.cdt.core.language.mapping"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.macosx.exe.release.609139754_org.eclipse.cdt.core.externalSettings"/>
+			<storageModule externalCElementFile="cdt.managedbuild.config.macosx.exe.release.609139754_org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="moead_cpp.cdt.managedbuild.target.macosx.exe.472216" name="Executable" projectType="cdt.managedbuild.target.macosx.exe"/>
+	</storageModule>
+</cproject>
