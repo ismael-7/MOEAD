@@ -260,7 +260,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata) {
 		pre[s] = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
 		aic += -2*log(pre[s]);
 	}
-	#pragma omp atomic
+	//#pragma omp atomic
 	aic = aic + 2*theta_size;
 	
 	return aic;
