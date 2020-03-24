@@ -213,7 +213,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata) {
 			newdata[i][theta_size-1] *=newdata[i][h];
 		}
 	}
-//}
+}
 	for (i = 0; i < theta_size; i++)
 		theta[i] = 0;
 	// iteration
