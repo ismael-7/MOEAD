@@ -201,7 +201,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata) {
 #pragma omp parallel num_threads(numHilos)
 {
 	//int id= omp_get_thread_num();
-	#pragma omp for private(i) 
+	#pragma omp for private(i) //shared(newdata)
 	for (i = 0; i < testsample; i++) {
 		//printf("Soy el hilo %d, bucle 1.\n",id);
 		newdata[i][0] = 1;
