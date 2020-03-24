@@ -196,23 +196,24 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata) {
 	// initialization
 	// par
 
-printf("tamaño de testsample: %d\n", testsample);
-printf("tamaño de theta_size: %d\n", theta_size);
-	#pragma omp parallel num_threads(numHilos)
+//printf("tamaño de testsample: %d\n", testsample);
+//printf("tamaño de theta_size: %d\n", theta_size);
+#pragma omp parallel num_threads(numHilos)
 {
-	int id= omp_get_thread_num();
-printf("Soy el hilo %d, bucle 1.\n",id);
-	#pragma omp for private(i,newdata) 
+	//int id= omp_get_thread_num();
+	#pragma omp for private(i) 
 	for (i = 0; i < testsample; i++) {
+		//printf("Soy el hilo %d, bucle 1.\n",id);
 		newdata[i][0] = 1;
 		newdata[i][theta_size-1] = 1;
 		for(int h=1;h<theta_size-1;h++) {
 //printf("Estoy en el bucle 1.2 par\n");
 			newdata[i][h] = SNPdata.data[i][selectedSNPSet[h-1]];
+			#pragma omp barrier
 			newdata[i][theta_size-1] *=newdata[i][h];
 		}
 	}
-}
+//}
 	for (i = 0; i < theta_size; i++)
 		theta[i] = 0;
 	// iteration
@@ -261,7 +262,7 @@ printf("Soy el hilo %d, bucle 1.\n",id);
 		loss = std::abs(lossnew - lossold);
 		iter++;
 	}
-	#pragma omp parallel num_threads(numHilos)
+#pragma omp parallel num_threads(numHilos)
 {
 int id= omp_get_thread_num();
 	#pragma omp for private(s) reduction(+:aic) 
@@ -333,3 +334,4 @@ bool mutation(solution_t *q) {
 		}
 	return mutado;
 }
+
