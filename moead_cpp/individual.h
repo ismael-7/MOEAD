@@ -15,7 +15,7 @@ public:
 	int    count;
 
 	void   rnd_init();
-	void   obj_eval();
+	void   obj_eval(double *time,std::fstream &fout);
 	void   show_objective();
 	void   show_variable();
 
@@ -45,11 +45,11 @@ void CIndividual::rnd_init()
       solucion.Validar(instancia.locisize);
 }
 
-void CIndividual::obj_eval()
+void CIndividual::obj_eval(double *time,std::fstream &fout)
 {
     //red bayesiana y verosimilitud
     solucion.score[0]=Bayesian_score(solucion.tabu,DIM_EPI,instancia);
-    solucion.score[1]=logistic_score(solucion.tabu,DIM_EPI,instancia);
+    solucion.score[1]=logistic_score(solucion.tabu,DIM_EPI,instancia, time,fout);
 }
 
 
