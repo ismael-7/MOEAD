@@ -11,6 +11,7 @@
 #include <cstring>
 #include <sstream>
 #include <eigen3/Eigen/Dense>
+#include <chrono>
 
 
 #define NUM_OBJETIVES 2
@@ -23,9 +24,9 @@ using namespace Eigen::Architecture;
 
 class SNP { // Contiene los datos de la instancia
 public:
-	int samplesize; //Número de individuos de la instancia
-	int locisize; // Número de SNPs de la instancia
-	int data_col; // Número de columnas de la instancia (SNPs+Clase[0-control, 1-caso])
+	int samplesize; //NÃºmero de individuos de la instancia
+	int locisize; // NÃºmero de SNPs de la instancia
+	int data_col; // NÃºmero de columnas de la instancia (SNPs+Clase[0-control, 1-caso])
 	int** data; // Datos de la instancia
 	char** SNPnames; // Nombres de los SNPs
 	//int classvalues[2];
@@ -36,19 +37,19 @@ public:
 int compareAIC(const void *a, const void *b); // Compara dos soluciones usando el objetivo de la verosimilitud; necesaria para hacer el qsort
 int compareBayesian(const void *a, const void *b); // Compara dos soluciones usando el objetivo de la red bayesiana; necesaria para hacer el qsort
 int compare (const void *a, const void *b); // Compara dos enteros; necesaria para hacer el qsort
-double Bayesian_score(int* selectedSNPSet, int k, SNP SNPdata); // Calcula el valor de la función objetivo de la red bayesiana de un conjunto de SNPs dado (selectedSNPSet). k es el tamaño de la epistasia y SNPData los datos de la instancia
-double logistic_score(int* selectedSNPSet, int k, SNP SNPdata); // Calcula el valor de la función objetivo de la verosimilitud de un conjunto de SNPs dado (selectedSNPSet). k es el tamaño de la epistasia y SNPData los datos de la instancia
+double Bayesian_score(int* selectedSNPSet, int k, SNP SNPdata); // Calcula el valor de la funciÃ³n objetivo de la red bayesiana de un conjunto de SNPs dado (selectedSNPSet). k es el tamaÃ±o de la epistasia y SNPData los datos de la instancia
+double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std::fstream &fout); // Calcula el valor de la funciÃ³n objetivo de la verosimilitud de un conjunto de SNPs dado (selectedSNPSet). k es el tamaÃ±o de la epistasia y SNPData los datos de la instancia
 
 
 
-struct solution_t { //Contiene los datos de una solución
-	int tabu[DIM_EPI_MAX]; // Conjunto de SNPs de la solución. Tendrá valores entre 0 y X-1, siendo X el tamaño de la epistasia. Como máximo, podrá tener DIM_EPI_MAX
-	int id; // Identificador de la solución
-	double score[NUM_OBJETIVES]; // Valores de las funciones objetivos de la solución
-	int rank;	// Ranking no dominado de la solución
-	double distance; // Distancia de crowding de la solución
+struct solution_t { //Contiene los datos de una soluciÃ³n
+	int tabu[DIM_EPI_MAX]; // Conjunto de SNPs de la soluciÃ³n. TendrÃ¡ valores entre 0 y X-1, siendo X el tamaÃ±o de la epistasia. Como mÃ¡ximo, podrÃ¡ tener DIM_EPI_MAX
+	int id; // Identificador de la soluciÃ³n
+	double score[NUM_OBJETIVES]; // Valores de las funciones objetivos de la soluciÃ³n
+	int rank;	// Ranking no dominado de la soluciÃ³n
+	double distance; // Distancia de crowding de la soluciÃ³n
 
-    //Sobrecarga del operador '=' (asignación)
+    //Sobrecarga del operador '=' (asignaciÃ³n)
     solution_t& operator=(const solution_t& a) {
 		for(int sc = 0; sc < NUM_OBJETIVES; ++sc)
 			score[sc] = a.score[sc];
@@ -61,7 +62,7 @@ struct solution_t { //Contiene los datos de una solución
     }
 
 	/*
-	*	Se dice que la solution A1 domina a la solución A2 si satisface las siguientes condiciones (funciones objetivo a minimizar):
+	*	Se dice que la solution A1 domina a la soluciÃ³n A2 si satisface las siguientes condiciones (funciones objetivo a minimizar):
 	*	1. fx(A1)<=fx(A2), donde fx son las funciones objetivo del problema.
 	*	2. fx(A1)<fx(A2) para al menos un objetivo del problema.
 	*/
@@ -89,29 +90,29 @@ struct solution_t { //Contiene los datos de una solución
         return true;
      } 
 
-     // Sobrecarga del operador '<<' (comparación de la distancia de crowding)
+     // Sobrecarga del operador '<<' (comparaciÃ³n de la distancia de crowding)
 	bool operator<<(const solution_t& a) const {
 		return (rank < a.rank or (rank == a.rank and distance > a.distance));
 	}
 
-	// Imprime los valores de las funciones objetivo de la solución
+	// Imprime los valores de las funciones objetivo de la soluciÃ³n
 	void print_scores() const {
 		printf("%.2f %.2f\n",score[0], score[1]);
 	}
 	
-	// Imprime los SNPs de la solución
+	// Imprime los SNPs de la soluciÃ³n
 	void print_ind() const {
 		for(int x=0; x<DIM_EPI;++x)
 			printf("%d ",tabu[x]);
 		printf("\n");
 	}
 	
-	// Imprime los valores de ranking no dominado y distancia de crowding de la solución
+	// Imprime los valores de ranking no dominado y distancia de crowding de la soluciÃ³n
 	void print_rank_crow() const {
  		printf("%d %f\n",rank, distance);
 	}
 	
-	// Indica si el snp pasado por parámetro está incluido en la solución excluyendo la posición pos
+	// Indica si el snp pasado por parÃ¡metro estÃ¡ incluido en la soluciÃ³n excluyendo la posiciÃ³n pos
 	bool buscar_snp(int snp, int pos) {
 		int i;
 		for (i=0; i<DIM_EPI; i++)
@@ -120,7 +121,7 @@ struct solution_t { //Contiene los datos de una solución
 		return false;
 	}
 	
-	// Comprueba si la solución es válida o no (SNPs repetidos). En caso de no ser válida, la arregla. locisize es el número de SNPs de la instancia
+	// Comprueba si la soluciÃ³n es vÃ¡lida o no (SNPs repetidos). En caso de no ser vÃ¡lida, la arregla. locisize es el nÃºmero de SNPs de la instancia
 	void Validar(int locisize) {
 		int i;
 		bool valido=true;
