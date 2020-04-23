@@ -13,14 +13,14 @@ public:
 	virtual ~CMOEAD();
 
 	void init_neighbourhood();               // calculate the neighbourhood of each subproblem
-	void init_population();                  // initialize the population
+	void init_population(double *time,std::fstream &fout);                  // initialize the population
 
 	//void load_parameter();
 
 	void update_reference(CIndividual &ind);                 // update ideal point which is used in Tchebycheff or NBI method
 	void update_problem(CIndividual &ind, int &id, int &type); // update current solutions in the neighbourhood
 
-	void evol_population();                                      // DE-based recombination
+	void evol_population(double *time,std::fstream &fout);                                      // DE-based recombination
 	void mate_selection(vector<int> &list, int cid, int size, int type);  // select mating parents
 
 	// execute MOEAD
@@ -61,7 +61,7 @@ CMOEAD::~CMOEAD()
 
 }
 
-void CMOEAD::init_population()
+void CMOEAD::init_population(double *time,std::fstream &fout)
 {
 	idealpoint = vector<double>(nobj, 1.0e+30);
 	utility    = vector<double>(pops, 1.0);
@@ -78,7 +78,7 @@ void CMOEAD::init_population()
 
 		// Randomize and evaluate solution
 		sub.indiv.rnd_init();
-		sub.indiv.obj_eval();
+		sub.indiv.obj_eval(time,fout);
 
 		sub.saved = sub.indiv;
 
@@ -279,7 +279,7 @@ void CMOEAD::mate_selection(vector<int> &list, int cid, int size, int type){
         
 }
 
-void CMOEAD::evol_population()
+void CMOEAD::evol_population(double *time,std::fstream &fout)
 {
 
 	// random order of subproblems at each generation
@@ -293,7 +293,6 @@ void CMOEAD::evol_population()
 	{
 
 		int c_sub = order[sub];    // random order
-               // printf("1 \n");
 		int type;
         double rnd = rnd_uni(&rnd_uni_init);
 
@@ -323,7 +322,7 @@ void CMOEAD::evol_population()
                     child.solucion.Validar(instancia.locisize);
                 
 		// evaluate the child solution
-		child.obj_eval();
+		child.obj_eval(time,fout);
 
 		// update the reference points and other solutions in the neighborhood or the whole population
 		update_reference(child);
@@ -336,17 +335,25 @@ void CMOEAD::evol_population()
 
 void CMOEAD::exec_emo(string nombre_fichero)
 {
+	///--
+	char filename_aic[1024];
+	sprintf(filename_aic,"valores_aic/result.txt");
+	std::fstream fout;
+	fout.open(filename_aic,std::ios::out);
+	///
+
+double time = 0.0;
     char filename[1024];
 	// initialization
 	nfes      = 0;
-        init_population();
+        init_population(&time,fout);
         init_neighbourhood();
 
 	int gen = 0;
 	
 	while(nfes < max_eval) //
 	{
-		evol_population();
+		evol_population(&time,fout);
 
 		gen++;
 
@@ -357,13 +364,17 @@ void CMOEAD::exec_emo(string nombre_fichero)
 		//printf("%d \n",nfes);
 	}
 
+	fout.close();
+
 	sprintf(filename,"POFS/%s_%d_%d_%d.dat",nombre_fichero.c_str(),probCross,lmut,fmut);
 	save_pos(filename);
-	sprintf(filename,"POF/%s_%d_%d_%d.dat",nombre_fichero.c_str() ,probCross,lmut,fmut);
+	//sprintf(filename,"POF/%s_%d_%d_%d.dat",nombre_fichero.c_str() ,probCross,lmut,fmut);
+	sprintf(filename,"POF/res_func_obj_%d.dat",numHilos);
 	save_front(filename);
 
 	population.clear();
 	idealpoint.clear();
+printf("Time in parallel section %lf\n", time);
 }
 void CMOEAD::save_front(char saveFilename[1024])
 {
