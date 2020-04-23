@@ -30,6 +30,9 @@ extern int DIM_EPI;
 
 int main(int argc,char *argv[])
 {
+std::chrono::time_point<std::chrono::system_clock> start, end;
+start = std::chrono::system_clock::now();
+std::chrono::duration<double> elapsed_segment;
     
     if(argc < 9){
       printf("error al lanzar la ejecución. La forma correcta es %s nombre_fichero proCruce lambamut factorMut DIM_EPI max_eval tamaño_poblacion numero_de_hilos\n",argv[0]);
@@ -52,7 +55,7 @@ int main(int argc,char *argv[])
         rangoMut = (instancia.locisize*fmut)/100;
 	
 	// random number init
-        rnd_uni_init = time(NULL);
+        rnd_uni_init = 1000000;//time(NULL);
 	r.seed(rnd_uni_init);
         // the parameter setting of test instance
         nvar=DIM_EPI;
@@ -65,5 +68,8 @@ int main(int argc,char *argv[])
         MOEAD.prob=0.7;
        // MOEAD.load_parameter();
         MOEAD.exec_emo(nombre_fichero);//run por parametro
+end = std::chrono::system_clock::now();
+elapsed_segment = end - start;
+printf("Total time: %lf\n", elapsed_segment.count());
 	return 0;
 }
