@@ -175,10 +175,10 @@ double Bayesian_score(int* selectedSNPSet, int k, SNP SNPdata) {
 //**************************************************************************
 // AIC score
 //**************************************************************************
-double logistic_score(int* selectedSNPSet, int k, SNP SNPdata) {
+double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std::fstream &fout) {
 	double delta = 0.001;
 	int maxiter = 30;
-	double aic = 0;
+	double aic = 0.0;
 	double lossold,lossnew,loss;
 	int i, j, s, theta_size, iter;
 	int testsample = SNPdata.samplesize;
@@ -187,61 +187,83 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata) {
 	MatrixXd xtwx(theta_size,theta_size);
 	// allocation
 	double theta[theta_size];
-	double ypre[testsample];
+	double ypre;
 	double pi[testsample]; 
 	double w[testsample];
 	double wz[testsample];
 	double xwz[theta_size];
-	double pre[testsample];
-	// initialization
-	// par
+	double pre;
 
-//printf("tamaño de testsample: %d\n", testsample);
-//printf("tamaño de theta_size: %d\n", theta_size);
-#pragma omp parallel num_threads(numHilos)
-{
-	//int id= omp_get_thread_num();
-	#pragma omp for private(i) //shared(newdata)
+	//--
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_segment;
+
+	// initialization
+	#pragma omp parallel for private(i) num_threads(numHilos) // shared(newdata)
 	for (i = 0; i < testsample; i++) {
-		//printf("Soy el hilo %d, bucle 1.\n",id);
 		newdata[i][0] = 1;
 		newdata[i][theta_size-1] = 1;
 		for(int h=1;h<theta_size-1;h++) {
-//printf("Estoy en el bucle 1.2 par\n");
 			newdata[i][h] = SNPdata.data[i][selectedSNPSet[h-1]];
-			#pragma omp barrier
 			newdata[i][theta_size-1] *=newdata[i][h];
 		}
 	}
-}
+	end = std::chrono::system_clock::now();
+	elapsed_segment = end - start;
+	*time += elapsed_segment.count();
+
 	for (i = 0; i < theta_size; i++)
 		theta[i] = 0;
 	// iteration
 	iter = 0;
 	loss = 1;
 	lossnew = 0;
+	std::chrono::time_point<std::chrono::system_clock> start2, end2;
+	std::chrono::time_point<std::chrono::system_clock> start3, end3;
+
 	while(loss > delta && iter < maxiter) {
 		lossold = lossnew;
+		////--
+		// start2 = std::chrono::system_clock::now();
+		// std::chrono::duration<double> elapsed_segment2;
+		//#pragma omp parallel for private(s,ypre) num_threads(numHilos) 
 		for (s = 0; s < testsample; s++) {
-			ypre[s] = 0;
+			ypre = 0;
 			for (j = 0; j < theta_size; j++)
-				ypre[s] += newdata[s][j] * theta[j];
-			if (ypre[s]>= -708 && ypre[s] <= 709)
-				pi[s] = exp(ypre[s])/(1+exp(ypre[s]));
-			else if (ypre[s]< -708)
+				ypre += newdata[s][j] * theta[j];
+			//printf("ypre=%f\n",ypre);
+			if (ypre>= -708 && ypre <= 709)
+				pi[s] = exp(ypre)/(1+exp(ypre));
+			else if (ypre< -708)
 				pi[s]=0;
 			else
 				pi[s]=1;
 			w[s] = pi[s]*(1-pi[s]);
-			wz[s] = w[s] * ypre[s] + SNPdata.data[s][SNPdata.data_col-1]-pi[s];
+			wz[s] = w[s] * ypre + SNPdata.data[s][SNPdata.data_col-1]-pi[s];
+			// printf("w[s]=%f -- ", w[s]);
+			// printf("wz[s]=%f --", wz[s]);
+			// printf("pi[s]=%f\n", pi[s]);
 		}
+		// end2 = std::chrono::system_clock::now();
+		// elapsed_segment2 = end2 - start2;
+		// *time += elapsed_segment2.count();
+		// //---
 		xtwx.setZero();
 		double red=0.0;
 		for (i = 0; i < theta_size; i++)
 			for (j = 0; j < theta_size; j++) {
 				red=0.0;
+				////--
+				// start3 = std::chrono::system_clock::now();
+				// std::chrono::duration<double> elapsed_segment3;
+				// #pragma omp parallel for private(s) reduction(+:red) num_threads(numHilos) 
 				for (s = 0; s < testsample; s++)
 					red += w[s] * newdata[s][i] * newdata[s][j];
+				// end3 = std::chrono::system_clock::now();
+				// elapsed_segment3 = end3 - start3;
+				// *time += elapsed_segment3.count();
+				// //--
 				xtwx(i,j) = red;
 			}
 		xtwx = xtwx.inverse();
@@ -262,20 +284,21 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata) {
 		loss = std::abs(lossnew - lossold);
 		iter++;
 	}
-#pragma omp parallel num_threads(numHilos)
-{
-int id= omp_get_thread_num();
-	#pragma omp for private(s) reduction(+:aic) 
+	// std::chrono::time_point<std::chrono::system_clock> start4, end4;
+	// start4 = std::chrono::system_clock::now();
+	// std::chrono::duration<double> elapsed_segment4;
+	// //Esta paralelización da mal.
+ 	#pragma omp parallel for private(s,pre) num_threads(numHilos) reduction(+:aic)
 	for (s = 0; s < testsample; s++) {
-//printf("Soy el hilo %d, bucle 2.\n",id);
-		//printf("Estoy en el bucle 2 par\n");
-		pre[s] = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
-		aic += -2*log(pre[s]);
+		pre = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
+		aic += -2*log(pre);
 	}
-}
-	//#pragma omp atomic
-	aic = aic + 2*theta_size;
-//}	
+	// end4 = std::chrono::system_clock::now();
+	// elapsed_segment4 = end4 - start4;
+	// *time += elapsed_segment2.count();
+		aic = aic + 2*theta_size;	
+		fout<<aic<<"\n";
+		//printf("valor de aic: %f\n",aic);
 	return aic;
 }
 
