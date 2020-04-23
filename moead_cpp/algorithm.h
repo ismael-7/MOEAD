@@ -337,7 +337,7 @@ void CMOEAD::exec_emo(string nombre_fichero)
 {
 	///--
 	char filename_aic[1024];
-	sprintf(filename_aic,"valores_aic/result.txt");
+	sprintf(filename_aic,"valores_aic/resultAic.txt");
 	std::fstream fout;
 	fout.open(filename_aic,std::ios::out);
 	///
