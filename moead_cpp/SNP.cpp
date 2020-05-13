@@ -301,7 +301,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	// ---
 	// #pragma omp parallel
 	// {
- 	//#pragma omp parallel for private(s,pre) reduction(+:aic) num_threads(numHilos)//;ordered;schedule(auto)
+ 	#pragma omp parallel for private(s,pre) reduction(+:aic) num_threads(numHilos)//;ordered;schedule(auto)
 	for (s = 0; s < testsample; s++) {
 		pre = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
 		//printf("valor de pre: %f\n",pre);
