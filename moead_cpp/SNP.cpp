@@ -200,7 +200,9 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	std::chrono::duration<double> elapsed_segment;
 
 	// initialization
-	#pragma omp parallel for private(i) num_threads(numHilos) // shared(newdata)
+	//omp_set_num_threads(numHilos);
+	
+	#pragma omp parallel for private(i) num_threads(numHilos)
 	for (i = 0; i < testsample; i++) {
 		newdata[i][0] = 1;
 		newdata[i][theta_size-1] = 1;
@@ -212,6 +214,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	end = std::chrono::system_clock::now();
 	elapsed_segment = end - start;
 	*time += elapsed_segment.count();
+
 
 	for (i = 0; i < theta_size; i++)
 		theta[i] = 0;
@@ -249,6 +252,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 		// elapsed_segment2 = end2 - start2;
 		// *time += elapsed_segment2.count();
 		// //---
+		
 		xtwx.setZero();
 		double red=0.0;
 		for (i = 0; i < theta_size; i++)
@@ -257,13 +261,17 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 				////--
 				// start3 = std::chrono::system_clock::now();
 				// std::chrono::duration<double> elapsed_segment3;
-				// #pragma omp parallel for private(s) reduction(+:red) num_threads(numHilos) 
+				omp_set_num_threads(numHilos);
+				#pragma omp parallel 
+				{
+				#pragma omp for private(s) reduction(+:red) //firstprivate(i,j)
 				for (s = 0; s < testsample; s++)
 					red += w[s] * newdata[s][i] * newdata[s][j];
 				// end3 = std::chrono::system_clock::now();
 				// elapsed_segment3 = end3 - start3;
 				// *time += elapsed_segment3.count();
 				// //--
+				}
 				xtwx(i,j) = red;
 			}
 		xtwx = xtwx.inverse();
@@ -284,15 +292,27 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 		loss = std::abs(lossnew - lossold);
 		iter++;
 	}
+
+
 	// std::chrono::time_point<std::chrono::system_clock> start4, end4;
 	// start4 = std::chrono::system_clock::now();
 	// std::chrono::duration<double> elapsed_segment4;
 	// //Esta paralelización da mal.
- 	#pragma omp parallel for private(s,pre) num_threads(numHilos) reduction(+:aic)
+	// ---
+	// #pragma omp parallel
+	// {
+ 	//#pragma omp parallel for private(s,pre) reduction(+:aic) num_threads(numHilos)//;ordered;schedule(auto)
 	for (s = 0; s < testsample; s++) {
 		pre = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
+		//printf("valor de pre: %f\n",pre);
+		// #pragma omp critical
+		// {
+			//fout<<pre<<"\n";
+		//}	
 		aic += -2*log(pre);
 	}
+	// }
+	// ---
 	// end4 = std::chrono::system_clock::now();
 	// elapsed_segment4 = end4 - start4;
 	// *time += elapsed_segment2.count();
