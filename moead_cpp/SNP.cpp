@@ -302,7 +302,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	// omp_set_num_threads(numHilos);
 	// #pragma omp parallel
 	// {
- 	#pragma omp parallel for default(none) private(s,pre) shared(SNPdata,pi,testsample) reduction(+:aic) num_threads(numHilos)//schedule(auto);
+ 	#pragma omp parallel for default(none) private(s,pre) shared(SNPdata,pi,testsample) reduction(+:aic) num_threads(numHilos)//shared(aic)//schedule(auto);
 	for (s = 0; s < testsample; s++) {
 		//double pre;
 		pre = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
@@ -312,6 +312,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 			//fout<<pre<<"\n";
 		//}	
 		//#pragma omp critical
+		//#pragma omp atomic
 		aic += -2*log(pre);
 	}
 	// }
