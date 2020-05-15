@@ -192,7 +192,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	double w[testsample];
 	double wz[testsample];
 	double xwz[theta_size];
-	double pre;
+	double pre =0.0;
 
 	//--
 	std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -230,7 +230,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 		////--
 		// start2 = std::chrono::system_clock::now();
 		// std::chrono::duration<double> elapsed_segment2;
-		//#pragma omp parallel for private(s,ypre) num_threads(numHilos) 
+		#pragma omp parallel for private(s,ypre) num_threads(numHilos) 
 		for (s = 0; s < testsample; s++) {
 			ypre = 0;
 			for (j = 0; j < theta_size; j++)
@@ -261,17 +261,17 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 				////--
 				// start3 = std::chrono::system_clock::now();
 				// std::chrono::duration<double> elapsed_segment3;
-				omp_set_num_threads(numHilos);
-				#pragma omp parallel 
-				{
-				#pragma omp for private(s) reduction(+:red) //firstprivate(i,j)
+				// omp_set_num_threads(numHilos);
+				// #pragma omp parallel 
+				// {
+				#pragma omp parallel for default(none) private(s) shared(i,j,newdata,testsample,w) reduction(+:red) num_threads(numHilos)// firstprivate(i,j)
 				for (s = 0; s < testsample; s++)
 					red += w[s] * newdata[s][i] * newdata[s][j];
 				// end3 = std::chrono::system_clock::now();
 				// elapsed_segment3 = end3 - start3;
 				// *time += elapsed_segment3.count();
 				// //--
-				}
+				//}
 				xtwx(i,j) = red;
 			}
 		xtwx = xtwx.inverse();
@@ -299,16 +299,19 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	// std::chrono::duration<double> elapsed_segment4;
 	// //Esta paralelización da mal.
 	// ---
+	// omp_set_num_threads(numHilos);
 	// #pragma omp parallel
 	// {
- 	#pragma omp parallel for private(s,pre) reduction(+:aic) num_threads(numHilos)//;ordered;schedule(auto)
+ 	#pragma omp parallel for default(none) private(s,pre) shared(SNPdata,pi,testsample) reduction(+:aic) num_threads(numHilos)//schedule(auto);
 	for (s = 0; s < testsample; s++) {
+		//double pre;
 		pre = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
 		//printf("valor de pre: %f\n",pre);
 		// #pragma omp critical
 		// {
 			//fout<<pre<<"\n";
 		//}	
+		//#pragma omp critical
 		aic += -2*log(pre);
 	}
 	// }
