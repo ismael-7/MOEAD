@@ -214,6 +214,8 @@ void CMOEAD::update_problem(CIndividual &indiv, int &id, int &type)
                 ////fitnessfunction trabaja con double, pasar todo a entero??
 		f1 = fitnessfunction(population[k].indiv.solucion, population[k].namda);
 		f2 = fitnessfunction(indiv.solucion, population[k].namda);
+
+		//if (*(float*)&f2 < *(float*)&f1)
 		if(f2<f1)
 		{
 			population[k].indiv = indiv;
@@ -233,6 +235,7 @@ void CMOEAD::update_reference(CIndividual &ind)
 	//ind: child solution
 	for(int n=0; n<nobj; n++)
 	{
+		//if (*(float*)&ind.solucion.score[n] < *(float*)&idealpoint[n])
 		if(ind.solucion.score[n]<idealpoint[n])
 		{
 			idealpoint[n] = ind.solucion.score[n];
@@ -288,10 +291,21 @@ void CMOEAD::evol_population(double *time,std::fstream &fout)
 	//random_shuffle(order.begin(), order.end());
 
 	vector<int> order;	this->tour_selection(10, order);
+	int sub;
+	// CIndividual v_par[order.size()];
+	// int v_type[order.size()];
+	// int v_csub[order.size()];
 
-    for(int sub=0; sub<order.size(); sub++)
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_segment;
+
+	//printf("fuera del bucle\n");
+	//omp_set_num_threads(numHilos);
+	#pragma omp parallel for private(sub) num_threads(numHilos) reduction(+:nfes)
+    for(sub=0; sub<order.size(); sub++)
 	{
-
+		//printf("dentro del bucle\n");
 		int c_sub = order[sub];    // random order
 		int type;
         double rnd = rnd_uni(&rnd_uni_init);
@@ -324,12 +338,34 @@ void CMOEAD::evol_population(double *time,std::fstream &fout)
 		// evaluate the child solution
 		child.obj_eval(time,fout);
 
+		// v_par[sub]=child;
+		// v_type[sub]=type;
+		// v_csub[sub]=c_sub;
+
+		//#pragma omp barrier
+		// int ip;
+		// for(ip=0;ip<numHilos;ip++){
+		// 	update_reference(v_par[ip]);
+		// 	update_problem(v_par[ip], c_sub, type);
+		// }
+		#pragma omp critical
+		{
 		// update the reference points and other solutions in the neighborhood or the whole population
 		update_reference(child);
 		update_problem(child, c_sub, type);
+		}
 
+		//#pragma omp atomic
 		nfes++; //aumenta dentro del while de exec_emo
 	}
+	// // int ip;
+	// // 	for(ip=0;ip<order.size();ip++){
+	// // 		update_reference(v_par[ip]);
+	// // 		update_problem(v_par[ip], v_csub[ip], v_type[ip]);
+	// // 	}
+	end = std::chrono::system_clock::now();
+	elapsed_segment = end - start;
+	*time += elapsed_segment.count();
 }
 
 
