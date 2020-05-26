@@ -195,14 +195,14 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	double pre =0.0;
 
 	//--
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_segment;
+	// std::chrono::time_point<std::chrono::system_clock> start, end;
+	// start = std::chrono::system_clock::now();
+	// std::chrono::duration<double> elapsed_segment;
 
 	// initialization
 	//omp_set_num_threads(numHilos);
 	
-	#pragma omp parallel for private(i) num_threads(numHilos)
+	// #pragma omp parallel for private(i) num_threads(numHilos)
 	for (i = 0; i < testsample; i++) {
 		newdata[i][0] = 1;
 		newdata[i][theta_size-1] = 1;
@@ -211,9 +211,9 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 			newdata[i][theta_size-1] *=newdata[i][h];
 		}
 	}
-	end = std::chrono::system_clock::now();
-	elapsed_segment = end - start;
-	*time += elapsed_segment.count();
+	// end = std::chrono::system_clock::now();
+	// elapsed_segment = end - start;
+	// *time += elapsed_segment.count();
 
 
 	for (i = 0; i < theta_size; i++)
@@ -230,7 +230,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 		////--
 		// start2 = std::chrono::system_clock::now();
 		// std::chrono::duration<double> elapsed_segment2;
-		#pragma omp parallel for private(s,ypre) num_threads(numHilos) 
+		// #pragma omp parallel for private(s,ypre) num_threads(numHilos) 
 		for (s = 0; s < testsample; s++) {
 			ypre = 0;
 			for (j = 0; j < theta_size; j++)
@@ -264,7 +264,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 				// omp_set_num_threads(numHilos);
 				// #pragma omp parallel 
 				// {
-				#pragma omp parallel for default(none) private(s) shared(i,j,newdata,testsample,w) reduction(+:red) num_threads(numHilos)// firstprivate(i,j)
+				// #pragma omp parallel for default(none) private(s) shared(i,j,newdata,testsample,w) reduction(+:red) num_threads(numHilos)// firstprivate(i,j)
 				for (s = 0; s < testsample; s++)
 					red += w[s] * newdata[s][i] * newdata[s][j];
 				// end3 = std::chrono::system_clock::now();
@@ -302,7 +302,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	// omp_set_num_threads(numHilos);
 	// #pragma omp parallel
 	// {
- 	#pragma omp parallel for default(none) private(s,pre) shared(SNPdata,pi,testsample) reduction(+:aic) num_threads(numHilos)//shared(aic)//schedule(auto);
+ 	// #pragma omp parallel for default(none) private(s,pre) shared(SNPdata,pi,testsample) reduction(+:aic) num_threads(numHilos)//schedule(auto); 
 	for (s = 0; s < testsample; s++) {
 		//double pre;
 		pre = std::abs(1 - SNPdata.data[s][SNPdata.data_col-1] - pi[s]);
@@ -311,8 +311,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 		// {
 			//fout<<pre<<"\n";
 		//}	
-		//#pragma omp critical
-		//#pragma omp atomic
+		//#pragma atomic
 		aic += -2*log(pre);
 	}
 	// }
@@ -321,7 +320,7 @@ double logistic_score(int* selectedSNPSet, int k, SNP SNPdata, double *time,std:
 	// elapsed_segment4 = end4 - start4;
 	// *time += elapsed_segment2.count();
 		aic = aic + 2*theta_size;	
-		fout<<aic<<"\n";
+		//fout<<aic<<"\n";
 		//printf("valor de aic: %f\n",aic);
 	return aic;
 }
